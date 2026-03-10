@@ -3,8 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>English AI Coach PRO</title>
+<title>English AI Coach PRO MAX</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -158,9 +157,17 @@ margin-top:6px;
 
 <div class="card">
 
-<h3>Wrong Words</h3>
+<h3>Review Wrong Words</h3>
 
 <ul id="wrongList"></ul>
+
+</div>
+
+<div class="card">
+
+<h3>Today's Review (Forgetting Curve)</h3>
+
+<ul id="reviewList"></ul>
 
 </div>
 
@@ -244,6 +251,8 @@ margin-top:6px;
 
 <p id="statCorrect"></p>
 
+<p id="memoryRate"></p>
+
 <canvas id="chart"></canvas>
 
 </div>
@@ -255,6 +264,8 @@ margin-top:6px;
 let words=[]
 let wrong=[]
 let writings=[]
+let reviewQueue=[]
+
 let correct=0
 let index=0
 
@@ -263,13 +274,9 @@ function toggleMenu(){
 let menu=document.getElementById("menu")
 
 if(menu.style.right=="0px"){
-
 menu.style.right="-260px"
-
 }else{
-
 menu.style.right="0px"
-
 }
 
 }
@@ -303,11 +310,9 @@ let c=r.split(",")
 if(c.length>=3){
 
 words.push({
-
 word:c[0].trim(),
 meaning:c[1].trim(),
 example:c[2].trim()
-
 })
 
 }
@@ -315,9 +320,7 @@ example:c[2].trim()
 })
 
 showWord()
-
 updateStats()
-
 drawChart()
 
 }
@@ -333,7 +336,6 @@ if(words.length==0)return
 let w=words[index]
 
 document.getElementById("meaning").innerText="Meaning: "+w.meaning
-
 document.getElementById("example").innerText="Example: "+w.example
 
 }
@@ -347,7 +349,6 @@ let correctWord=words[index].word.toLowerCase()
 if(input==correctWord){
 
 document.getElementById("result").innerText="Correct"
-
 correct++
 
 }else{
@@ -356,12 +357,13 @@ document.getElementById("result").innerText="Wrong: "+correctWord
 
 wrong.push(words[index])
 
+scheduleReview(words[index])
+
 renderWrong()
 
 }
 
 updateStats()
-
 drawChart()
 
 }
@@ -371,7 +373,6 @@ function next(){
 index=(index+1)%words.length
 
 document.getElementById("answer").value=""
-
 document.getElementById("result").innerText=""
 
 showWord()
@@ -387,10 +388,45 @@ list.innerHTML=""
 wrong.forEach(w=>{
 
 let li=document.createElement("li")
-
 li.innerText=w.word+" - "+w.meaning
+list.appendChild(li)
+
+})
+
+}
+
+function scheduleReview(word){
+
+let time=Date.now()+86400000
+
+reviewQueue.push({
+word:word,
+time:time
+})
+
+renderReview()
+
+}
+
+function renderReview(){
+
+let list=document.getElementById("reviewList")
+
+list.innerHTML=""
+
+let now=Date.now()
+
+reviewQueue.forEach(w=>{
+
+if(w.time<now){
+
+let li=document.createElement("li")
+
+li.innerText=w.word.word+" - "+w.word.meaning
 
 list.appendChild(li)
+
+}
 
 })
 
@@ -437,9 +473,7 @@ list.innerHTML=""
 writings.forEach(t=>{
 
 let li=document.createElement("li")
-
 li.innerText=t
-
 list.appendChild(li)
 
 })
@@ -459,8 +493,15 @@ document.getElementById("goalText").innerText="Today's goal: "+goal
 function updateStats(){
 
 document.getElementById("statWords").innerText="Words: "+words.length
-
 document.getElementById("statCorrect").innerText="Correct: "+correct
+
+let rate=0
+
+if(words.length>0){
+rate=Math.round((correct/words.length)*100)
+}
+
+document.getElementById("memoryRate").innerText="Memory Rate: "+rate+"%"
 
 }
 
@@ -469,16 +510,13 @@ function drawChart(){
 let ctx=document.getElementById("chart").getContext("2d")
 
 new Chart(ctx,{
-
 type:"bar",
-
 data:{
 labels:["Words","Correct","Wrong"],
 datasets:[{
 data:[words.length,correct,wrong.length]
 }]
 }
-
 })
 
 }

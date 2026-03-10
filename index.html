@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English AI Coach</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:-apple-system;
+background:#f2f2f7;
+padding:20px;
+}
+
+h1{
+text-align:center;
+}
+
+.card{
+background:white;
+padding:18px;
+border-radius:16px;
+margin-bottom:18px;
+box-shadow:0 6px 14px rgba(0,0,0,0.08);
+}
+
+button{
+background:black;
+color:white;
+border:none;
+padding:10px 14px;
+border-radius:10px;
+margin-top:10px;
+}
+
+input,textarea{
+width:100%;
+padding:10px;
+border-radius:10px;
+border:1px solid #ddd;
+margin-top:6px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>📚 English AI Coach</h1>
+
+<div class="card">
+
+<h3>👤 Login</h3>
+
+<input id="username" placeholder="Enter your name">
+
+<button onclick="login()">Login</button>
+
+<p id="welcome"></p>
+
+</div>
+
+<div class="card">
+
+<h3>📂 Upload Vocabulary CSV</h3>
+
+<input type="file" id="csvFile">
+
+<button onclick="uploadCSV()">Upload</button>
+
+</div>
+
+<div class="card">
+
+<h3>🧠 Vocabulary Quiz</h3>
+
+<p id="meaning">Upload word list first</p>
+
+<p id="example"></p>
+
+<input id="answer" placeholder="Type the English word">
+
+<button onclick="check()">Check</button>
+
+<p id="result"></p>
+
+<button onclick="next()">Next</button>
+
+</div>
+
+<div class="card">
+
+<h3>🎤 Pronunciation Practice</h3>
+
+<button onclick="startSpeech()">Start Speaking</button>
+
+<p id="speechResult"></p>
+
+</div>
+
+<div class="card">
+
+<h3>❌ Wrong Words</h3>
+
+<ul id="wrongList"></ul>
+
+</div>
+
+<div class="card">
+
+<h3>✍️ English Diary</h3>
+
+<textarea id="writing" rows="3"></textarea>
+
+<button onclick="saveWriting()">Save</button>
+
+<ul id="writingList"></ul>
+
+</div>
+
+<div class="card">
+
+<h3>🤖 AI Writing Feedback</h3>
+
+<textarea id="aiInput" rows="3"></textarea>
+
+<button onclick="aiCheck()">Check Writing</button>
+
+<p id="aiResult"></p>
+
+</div>
+
+<div class="card">
+
+<h3>📊 Study Stats</h3>
+
+<p id="statWords"></p>
+<p id="statCorrect"></p>
+
+<canvas id="chart" height="150"></canvas>
+
+</div>
+
+<script>
+
+let words = JSON.parse(localStorage.getItem("words")) || []
+let wrong = JSON.parse(localStorage.getItem("wrong")) || []
+let writings = JSON.parse(localStorage.getItem("writings")) || []
+
+let index=0
+let correct=0
+
+function login(){
+let name=document.getElementById("username").value
+localStorage.setItem("user",name)
+document.getElementById("welcome").innerText="Welcome "+name
+}
+
+function uploadCSV(){
+
+let file=document.getElementById("csvFile").files[0]
+
+let reader=new FileReader()
+
+reader.onload=function(e){
+
+let rows=e.target.result.split("\n")
+
+rows.forEach(r=>{
+
+let c=r.split(",")
+
+if(c.length>=3){
+
+words.push({
+word:c[0].trim(),
+meaning:c[1].trim(),
+example:c[2].trim()
+})
+
+}
+
+})
+
+localStorage.setItem("words",JSON.stringify(words))
+
+showWord()
+
+updateStats()
+
+drawChart()
+
+}
+
+reader.readAsText(file)
+
+}
+
+function showWord(){
+
+if(words.length==0)return
+
+let w=words[index]
+
+document.getElementById("meaning").innerText="Meaning: "+w.meaning
+document.getElementById("example").innerText="Example: "+w.example
+
+}
+
+function check(){
+
+let input=document.getElementById("answer").value.toLowerCase()
+
+let correctWord=words[index].word.toLowerCase()
+
+if(input==correctWord){
+
+document.getElementById("result").innerText="✅ Correct"
+
+correct++
+
+}else{
+
+document.getElementById("result").innerText="❌ "+correctWord
+
+wrong.push(words[index])
+
+localStorage.setItem("wrong",JSON.stringify(wrong))
+
+renderWrong()
+
+}
+
+updateStats()
+
+drawChart()
+
+}
+
+function next(){
+
+index=(index+1)%words.length
+
+document.getElementById("answer").value=""
+
+document.getElementById("result").innerText=""
+
+showWord()
+
+}
+
+function renderWrong(){
+
+let list=document.getElementById("wrongList")
+
+list.innerHTML=""
+
+wrong.forEach(w=>{
+
+let li=document.createElement("li")
+
+li.innerText=w.word+" - "+w.meaning
+
+list.appendChild(li)
+
+})
+
+}
+
+function saveWriting(){
+
+let text=document.getElementById("writing").value
+
+if(!text)return
+
+writings.push(text)
+
+localStorage.setItem("writings",JSON.stringify(writings))
+
+renderWriting()
+
+document.getElementById("writing").value=""
+
+}
+
+function renderWriting(){
+
+let list=document.getElementById("writingList")
+
+list.innerHTML=""
+
+writings.forEach(t=>{
+
+let li=document.createElement("li")
+
+li.innerText=t
+
+list.appendChild(li)
+
+})
+
+}
+
+function aiCheck(){
+
+let text=document.getElementById("aiInput").value
+
+if(!text){
+document.getElementById("aiResult").innerText="Write something."
+return
+}
+
+document.getElementById("aiResult").innerText="AI feedback feature ready."
+
+}
+
+function startSpeech(){
+
+let recognition = new webkitSpeechRecognition()
+
+recognition.lang="en-US"
+
+recognition.onresult=function(event){
+
+let speech = event.results[0][0].transcript
+
+document.getElementById("speechResult").innerText="You said: "+speech
+
+}
+
+recognition.start()
+
+}
+
+function updateStats(){
+
+document.getElementById("statWords").innerText="Words: "+words.length
+
+document.getElementById("statCorrect").innerText="Correct: "+correct
+
+}
+
+function drawChart(){
+
+let ctx=document.getElementById("chart").getContext("2d")
+
+new Chart(ctx,{
+type:'bar',
+data:{
+labels:['Words','Correct','Wrong'],
+datasets:[{
+data:[words.length,correct,wrong.length]
+}]
+}
+})
+
+}
+
+renderWrong()
+renderWriting()
+updateStats()
+
+</script>
+
+</body>
+</html>

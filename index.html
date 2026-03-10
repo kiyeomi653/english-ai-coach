@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>English AI Coach</title>
+
+<title>English AI Coach PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -10,12 +12,50 @@
 
 body{
 font-family:-apple-system;
+margin:0;
 background:#f2f2f7;
+}
+
+header{
+background:black;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.menuBtn{
+font-size:24px;
+cursor:pointer;
+}
+
+.menu{
+position:fixed;
+top:0;
+right:-260px;
+width:260px;
+height:100%;
+background:white;
+box-shadow:-3px 0 10px rgba(0,0,0,0.2);
+padding:20px;
+transition:0.3s;
+}
+
+.menu a{
+display:block;
+margin:14px 0;
+font-size:18px;
+cursor:pointer;
+}
+
+.page{
+display:none;
 padding:20px;
 }
 
-h1{
-text-align:center;
+.active{
+display:block;
 }
 
 .card{
@@ -49,23 +89,36 @@ margin-top:6px;
 
 <body>
 
-<h1>📚 English AI Coach</h1>
+<header>
 
-<div class="card">
+<h3>English AI Coach</h3>
 
-<h3>👤 Login</h3>
+<div class="menuBtn" onclick="toggleMenu()">☰</div>
 
-<input id="username" placeholder="Enter your name">
+</header>
 
-<button onclick="login()">Login</button>
+<div id="menu" class="menu">
 
-<p id="welcome"></p>
+<h3>Menu</h3>
+
+<a onclick="openPage('home')">Home</a>
+<a onclick="openPage('quiz')">Vocabulary Quiz</a>
+<a onclick="openPage('review')">Review Words</a>
+<a onclick="openPage('speech')">Pronunciation</a>
+<a onclick="openPage('writing')">Writing Diary</a>
+<a onclick="openPage('goal')">Daily Goal</a>
+<a onclick="openPage('calendar')">Study Calendar</a>
+<a onclick="openPage('stats')">Study Stats</a>
 
 </div>
 
+<!-- HOME -->
+
+<div id="home" class="page active">
+
 <div class="card">
 
-<h3>📂 Upload Vocabulary CSV</h3>
+<h3>Upload Vocabulary CSV</h3>
 
 <input type="file" id="csvFile">
 
@@ -73,15 +126,21 @@ margin-top:6px;
 
 </div>
 
+</div>
+
+<!-- QUIZ -->
+
+<div id="quiz" class="page">
+
 <div class="card">
 
-<h3>🧠 Vocabulary Quiz</h3>
+<h3>Vocabulary Quiz</h3>
 
-<p id="meaning">Upload word list first</p>
+<p id="meaning">Upload words first</p>
 
 <p id="example"></p>
 
-<input id="answer" placeholder="Type the English word">
+<input id="answer" placeholder="Type the word">
 
 <button onclick="check()">Check</button>
 
@@ -91,9 +150,29 @@ margin-top:6px;
 
 </div>
 
+</div>
+
+<!-- REVIEW -->
+
+<div id="review" class="page">
+
 <div class="card">
 
-<h3>🎤 Pronunciation Practice</h3>
+<h3>Wrong Words</h3>
+
+<ul id="wrongList"></ul>
+
+</div>
+
+</div>
+
+<!-- SPEECH -->
+
+<div id="speech" class="page">
+
+<div class="card">
+
+<h3>Pronunciation Practice</h3>
 
 <button onclick="startSpeech()">Start Speaking</button>
 
@@ -101,19 +180,17 @@ margin-top:6px;
 
 </div>
 
-<div class="card">
-
-<h3>❌ Wrong Words</h3>
-
-<ul id="wrongList"></ul>
-
 </div>
 
+<!-- WRITING -->
+
+<div id="writing" class="page">
+
 <div class="card">
 
-<h3>✍️ English Diary</h3>
+<h3>English Diary</h3>
 
-<textarea id="writing" rows="3"></textarea>
+<textarea id="writingText"></textarea>
 
 <button onclick="saveWriting()">Save</button>
 
@@ -121,42 +198,92 @@ margin-top:6px;
 
 </div>
 
+</div>
+
+<!-- GOAL -->
+
+<div id="goal" class="page">
+
 <div class="card">
 
-<h3>🤖 AI Writing Feedback</h3>
+<h3>Today's Study Goal</h3>
 
-<textarea id="aiInput" rows="3"></textarea>
+<input id="goalInput" placeholder="ex: 50 words">
 
-<button onclick="aiCheck()">Check Writing</button>
+<button onclick="saveGoal()">Save Goal</button>
 
-<p id="aiResult"></p>
+<p id="goalText"></p>
 
 </div>
 
+</div>
+
+<!-- CALENDAR -->
+
+<div id="calendar" class="page">
+
 <div class="card">
 
-<h3>📊 Study Stats</h3>
+<h3>Study Calendar</h3>
+
+<p id="calendarText"></p>
+
+</div>
+
+</div>
+
+<!-- STATS -->
+
+<div id="stats" class="page">
+
+<div class="card">
+
+<h3>Study Stats</h3>
 
 <p id="statWords"></p>
+
 <p id="statCorrect"></p>
 
-<canvas id="chart" height="150"></canvas>
+<canvas id="chart"></canvas>
+
+</div>
 
 </div>
 
 <script>
 
-let words = JSON.parse(localStorage.getItem("words")) || []
-let wrong = JSON.parse(localStorage.getItem("wrong")) || []
-let writings = JSON.parse(localStorage.getItem("writings")) || []
-
-let index=0
+let words=[]
+let wrong=[]
+let writings=[]
 let correct=0
+let index=0
 
-function login(){
-let name=document.getElementById("username").value
-localStorage.setItem("user",name)
-document.getElementById("welcome").innerText="Welcome "+name
+function toggleMenu(){
+
+let menu=document.getElementById("menu")
+
+if(menu.style.right=="0px"){
+
+menu.style.right="-260px"
+
+}else{
+
+menu.style.right="0px"
+
+}
+
+}
+
+function openPage(page){
+
+document.querySelectorAll(".page").forEach(p=>{
+p.classList.remove("active")
+})
+
+document.getElementById(page).classList.add("active")
+
+toggleMenu()
+
 }
 
 function uploadCSV(){
@@ -176,16 +303,16 @@ let c=r.split(",")
 if(c.length>=3){
 
 words.push({
+
 word:c[0].trim(),
 meaning:c[1].trim(),
 example:c[2].trim()
+
 })
 
 }
 
 })
-
-localStorage.setItem("words",JSON.stringify(words))
 
 showWord()
 
@@ -206,6 +333,7 @@ if(words.length==0)return
 let w=words[index]
 
 document.getElementById("meaning").innerText="Meaning: "+w.meaning
+
 document.getElementById("example").innerText="Example: "+w.example
 
 }
@@ -218,17 +346,15 @@ let correctWord=words[index].word.toLowerCase()
 
 if(input==correctWord){
 
-document.getElementById("result").innerText="✅ Correct"
+document.getElementById("result").innerText="Correct"
 
 correct++
 
 }else{
 
-document.getElementById("result").innerText="❌ "+correctWord
+document.getElementById("result").innerText="Wrong: "+correctWord
 
 wrong.push(words[index])
-
-localStorage.setItem("wrong",JSON.stringify(wrong))
 
 renderWrong()
 
@@ -270,19 +396,35 @@ list.appendChild(li)
 
 }
 
+function startSpeech(){
+
+let recognition=new webkitSpeechRecognition()
+
+recognition.lang="en-US"
+
+recognition.onresult=function(e){
+
+let speech=e.results[0][0].transcript
+
+document.getElementById("speechResult").innerText="You said: "+speech
+
+}
+
+recognition.start()
+
+}
+
 function saveWriting(){
 
-let text=document.getElementById("writing").value
+let text=document.getElementById("writingText").value
 
 if(!text)return
 
 writings.push(text)
 
-localStorage.setItem("writings",JSON.stringify(writings))
-
 renderWriting()
 
-document.getElementById("writing").value=""
+document.getElementById("writingText").value=""
 
 }
 
@@ -304,34 +446,13 @@ list.appendChild(li)
 
 }
 
-function aiCheck(){
+function saveGoal(){
 
-let text=document.getElementById("aiInput").value
+let goal=document.getElementById("goalInput").value
 
-if(!text){
-document.getElementById("aiResult").innerText="Write something."
-return
-}
+localStorage.setItem("goal",goal)
 
-document.getElementById("aiResult").innerText="AI feedback feature ready."
-
-}
-
-function startSpeech(){
-
-let recognition = new webkitSpeechRecognition()
-
-recognition.lang="en-US"
-
-recognition.onresult=function(event){
-
-let speech = event.results[0][0].transcript
-
-document.getElementById("speechResult").innerText="You said: "+speech
-
-}
-
-recognition.start()
+document.getElementById("goalText").innerText="Today's goal: "+goal
 
 }
 
@@ -348,20 +469,23 @@ function drawChart(){
 let ctx=document.getElementById("chart").getContext("2d")
 
 new Chart(ctx,{
-type:'bar',
+
+type:"bar",
+
 data:{
-labels:['Words','Correct','Wrong'],
+labels:["Words","Correct","Wrong"],
 datasets:[{
 data:[words.length,correct,wrong.length]
 }]
 }
+
 })
 
 }
 
-renderWrong()
-renderWriting()
-updateStats()
+let today=new Date().toLocaleDateString()
+
+document.getElementById("calendarText").innerText="Today you studied on "+today
 
 </script>
 
